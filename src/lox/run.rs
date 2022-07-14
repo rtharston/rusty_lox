@@ -1,7 +1,11 @@
 // Open the given file and run its contents
 pub fn run_file(path: &str) {
-    let print_str: String = format!("run file: {path}");
-    run(&print_str)
+    let read_result = std::fs::read_to_string(path);
+
+    match read_result {
+        Err(e) => println!("Attempting to read: `{}` caused the following error:\n\t{}", path, e),
+        Ok(file_contents) => run(&file_contents)
+    }
 }
 
 // Show a prompt to the user and run their input line by line
