@@ -1,5 +1,8 @@
 use super::error_handler::{CrashingErrorHandler, ErrorHandler, ReportingErrorHandler};
 
+#[path ="tokenizer/mod.rs"]
+mod tokenizer;
+
 // Open the given file and run its contents
 pub fn run_file(path: &str) {
     let read_result = std::fs::read_to_string(path);
@@ -45,9 +48,13 @@ pub fn run_prompt() {
 
 // Run the code
 fn run<T: ErrorHandler>(error_handler: &mut T, source: &str) {
-    println!("{}", source);
-    // let error_in_code = true;
-    // if error_in_code {
-    //     error_handler.error(0, "message")
-    // }
+    let tokenizer = tokenizer::Tokenizer::new(source);
+
+    for token in tokenizer.tokens() {
+        // let error_in_code = true;
+        // if error_in_code {
+        //     error_handler.error(0, "message")
+        // }
+        println!("token:\n\ttype: `{:?}`\n\tvalue: `{}`", token.r#type, token.value)
+    }
 }
