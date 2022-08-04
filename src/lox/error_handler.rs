@@ -1,27 +1,41 @@
 
-pub struct ErrorHandler {
-    had_error: bool
+mod error_internals {
+    pub trait Report {
+        fn report(&mut self, line: u32, r#where: &str, message: &str);
+    }
 }
 
-impl ErrorHandler {
-    pub fn new() -> Self {
-        ErrorHandler { had_error: false }
-    }
+pub trait ErrorHandler: error_internals::Report {
+    fn new() -> Self;
 
-    pub fn error(&mut self, line: u32, message: &str) {
+    fn error(&mut self, line: u32, message: &str) {
         self.report(line, "", message)
     }
+}
 
+pub struct CrashingErrorHandler { }
+
+impl ErrorHandler for CrashingErrorHandler {
+    fn new() -> Self { CrashingErrorHandler {} }
+}
+
+impl error_internals::Report for CrashingErrorHandler {
     fn report(&mut self, line: u32, r#where: &str, message: &str) {
         println!("[line {}] Error{}: {}", line, r#where, message);
-        self.had_error = true
-    }
 
-    pub fn had_error(&self) -> bool {
-        self.had_error
+        // If there was an error in the file indicate we didn't exit cleanly
+        std::process::exit(exitcode::DATAERR);
     }
+}
 
-    pub fn clear_error(&mut self) {
-        self.had_error = false
+pub struct ReportingErrorHandler { }
+
+impl ErrorHandler for ReportingErrorHandler {
+    fn new() -> Self { ReportingErrorHandler {} }
+}
+
+impl error_internals::Report for ReportingErrorHandler {
+    fn report(&mut self, line: u32, r#where: &str, message: &str) {
+        println!("[line {}] Error{}: {}", line, r#where, message);
     }
 }

@@ -1,4 +1,4 @@
-use super::error_handler::ErrorHandler;
+use super::error_handler::{CrashingErrorHandler, ErrorHandler, ReportingErrorHandler};
 
 // Open the given file and run its contents
 pub fn run_file(path: &str) {
@@ -7,12 +7,9 @@ pub fn run_file(path: &str) {
     match read_result {
         Err(e) => println!("Attempting to read: `{}` caused the following error:\n\t{}", path, e),
         Ok(file_contents) => {
-            let mut error_handler = ErrorHandler::new();
+            // If there is an error while running we want to exit
+            let mut error_handler = CrashingErrorHandler::new();
             run(&mut error_handler, &file_contents);
-            if error_handler.had_error() {
-                // If there was an error in the file indicate we didn't exit cleanly
-                std::process::exit(exitcode::DATAERR);
-            }
         }
     }
 }
@@ -23,7 +20,8 @@ pub fn run_prompt() {
     let stdin = stdin();
     let mut stdout = stdout();
     let mut input = String::new();
-    let mut error_handler = ErrorHandler::new();
+    // we don't want to exit in the middle of the user's session if there was an error
+    let mut error_handler = ReportingErrorHandler::new();
 
     loop {
         print!("> ");
@@ -37,8 +35,7 @@ pub fn run_prompt() {
                 }
 
                 run(&mut error_handler, &input.trim());
-                // we don't want to exit in the middle of the user's session if there was an error
-                error_handler.clear_error();
+
                 input.clear()
             },
             Err(e) => println!("Attempting to read line caused the following error:\n\t{}", e),
@@ -47,7 +44,7 @@ pub fn run_prompt() {
 }
 
 // Run the code
-fn run(error_handler: &mut ErrorHandler, source: &str) {
+fn run<T: ErrorHandler>(error_handler: &mut T, source: &str) {
     println!("{}", source);
     // let error_in_code = true;
     // if error_in_code {
